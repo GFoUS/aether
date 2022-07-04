@@ -60,15 +60,18 @@ void vulkan_renderpass_builder_add_subpass(vulkan_renderpass_builder* builder, v
 }
 
 vulkan_renderpass* vulkan_renderpass_builder_build(vulkan_renderpass_builder* builder, vulkan_device* device) {
-    VkSubpassDependency* dependencies = malloc(sizeof(VkSubpassDependency) * (builder->numSubpasses - 1));
-    CLEAR_MEMORY_ARRAY(dependencies, builder->numSubpasses - 1);
-    for (u32 i = 0; i < (builder->numSubpasses - 1); i++) {
-        dependencies[i].srcSubpass = i;
-        dependencies[i].dstSubpass = i + 1;
-        dependencies[i].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        dependencies[i].srcAccessMask = 0;
-        dependencies[i].dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        dependencies[i].dstAccessMask = 0;
+    VkSubpassDependency* dependencies = NULL;
+    if (builder->numSubpasses - 1) {
+        dependencies = malloc(sizeof(VkSubpassDependency) * (builder->numSubpasses - 1));
+        CLEAR_MEMORY_ARRAY(dependencies, builder->numSubpasses - 1);
+        for (u32 i = 0; i < (builder->numSubpasses - 1); i++) {
+            dependencies[i].srcSubpass = i;
+            dependencies[i].dstSubpass = i + 1;
+            dependencies[i].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+            dependencies[i].srcAccessMask = 0;
+            dependencies[i].dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            dependencies[i].dstAccessMask = 0;
+        }
     }
     
     VkRenderPassCreateInfo createInfo;
@@ -83,6 +86,7 @@ vulkan_renderpass* vulkan_renderpass_builder_build(vulkan_renderpass_builder* bu
     createInfo.pDependencies = createInfo.dependencyCount ? dependencies : NULL;
 
     vulkan_renderpass* renderpass = malloc(sizeof(vulkan_renderpass));
+    CLEAR_MEMORY(renderpass);
     renderpass->device = device;
     renderpass->numAttachments = builder->numAttachments;
     renderpass->attachments = builder->attachments;
@@ -94,6 +98,7 @@ vulkan_renderpass* vulkan_renderpass_builder_build(vulkan_renderpass_builder* bu
         FATAL("Vulkan renderpass creation failed with error code: %d", result);
     }
 
+    //free(dependencies);
     free(builder);
 
     return renderpass;

@@ -57,11 +57,17 @@ window_window* window_create(window_config* config) {
 
     if (config->isFullscreen) {
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-        i32 width, height;
-        glfwGetMonitorWorkarea(monitor, NULL, NULL, &width, &height);
-        window->width = (u32)width;
-        window->height = (u32)height;
-        window->window = glfwCreateWindow(width, height, config->title, NULL, NULL);
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+
+        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+
+        window->window = glfwCreateWindow(mode->width, mode->height, config->title, monitor, NULL);
+        window->width = mode->width;
+        window->height = mode->height;
     } else {
         window->width = config->width;
         window->height = config->height;

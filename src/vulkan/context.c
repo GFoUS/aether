@@ -50,9 +50,6 @@ vulkan_context* vulkan_context_create(window_window* window)
 	}
 	INFO("Created VMA allocator");
 
-	ctx->swapchain = vulkan_swapchain_create(ctx, window, ctx->surface);
-	INFO("Created swapchain");
-
 	ctx->commandPool = vulkan_command_pool_create(ctx->device, ctx->physical->queues.graphicsIndex);
 	INFO("Created command pool");
 
@@ -62,7 +59,6 @@ vulkan_context* vulkan_context_create(window_window* window)
 void vulkan_context_destroy(vulkan_context* ctx)
 {
 	vulkan_command_pool_destroy(ctx->commandPool);
-	vulkan_swapchain_destroy(ctx->swapchain);
 	vmaDestroyAllocator(ctx->allocator);
 	vulkan_device_destroy(ctx->device);
 	vulkan_physical_device_destroy(ctx->physical);

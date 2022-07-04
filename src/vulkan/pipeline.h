@@ -45,6 +45,9 @@ typedef struct {
 
     VkCullModeFlags rasterizerCullMode;
     VkSampleCountFlags samples;
+
+    u32 numDynamicStates;
+    VkDynamicState* dynamicStates;
 } vulkan_pipeline_config;
 
 vulkan_pipeline* vulkan_pipeline_create(vulkan_device* device, vulkan_pipeline_config* config);

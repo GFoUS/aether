@@ -146,6 +146,17 @@ vulkan_pipeline_layout* vulkan_pipeline_layout_create(vulkan_device* device, vul
     return layout;
 }
 
+VkPipelineDynamicStateCreateInfo get_dynamic_state(vulkan_pipeline_config* config) {
+    VkPipelineDynamicStateCreateInfo dynamicState;
+    CLEAR_MEMORY(&dynamicState);
+
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.dynamicStateCount = config->numDynamicStates;
+    dynamicState.pDynamicStates = config->dynamicStates;
+
+    return dynamicState;
+}
+
 void vulkan_pipeline_layout_destroy(vulkan_pipeline_layout* layout) {
     vkDestroyPipelineLayout(layout->device->device, layout->layout, NULL);
     free(layout);
@@ -162,6 +173,7 @@ vulkan_pipeline* vulkan_pipeline_create(vulkan_device* device, vulkan_pipeline_c
     VkPipelineMultisampleStateCreateInfo multisampling = get_multisampling(config);
     VkPipelineDepthStencilStateCreateInfo depthStencil = get_depth_stencil(config);
     VkPipelineColorBlendStateCreateInfo blending = get_blending(config);
+    VkPipelineDynamicStateCreateInfo dynamicState = get_dynamic_state(config);
     VkSubpassDescription subpass = config->renderpass->subpasses[config->subpass];
 
     vulkan_pipeline_layout_config layoutConfig;
@@ -183,7 +195,7 @@ vulkan_pipeline* vulkan_pipeline_create(vulkan_device* device, vulkan_pipeline_c
     createInfo.pMultisampleState = &multisampling;
     createInfo.pDepthStencilState = subpass.pDepthStencilAttachment != NULL ? &depthStencil : NULL;
     createInfo.pColorBlendState = &blending;
-    createInfo.pDynamicState = NULL;
+    createInfo.pDynamicState = &dynamicState;
     createInfo.layout = layout->layout;
     createInfo.renderPass = config->renderpass->renderpass;
     createInfo.subpass = config->subpass;

@@ -18,7 +18,6 @@ typedef struct _vulkan_context {
 	VmaAllocator            allocator;
 
 	VkSurfaceKHR surface;
-	vulkan_swapchain* swapchain;
 	vulkan_command_pool* commandPool;
 
 	window_window* window;

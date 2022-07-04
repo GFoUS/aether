@@ -20,13 +20,20 @@ VkPresentModeKHR pick_mode(u32 numModes, VkPresentModeKHR* modes) {
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D pick_extent(VkSurfaceCapabilitiesKHR* capabilities, window_window* window) {
+VkExtent2D pick_extent(vulkan_context* ctx) {
+    i32 width, height;
+    glfwGetFramebufferSize(ctx->window->window, &width, &height);
+    while (width == 0 || height == 0) { // Stall if minimised
+        glfwGetFramebufferSize(ctx->window->window, &width, &height);
+        glfwWaitEvents();
+    }
+    
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(ctx->physical->physical, ctx->surface, &ctx->physical->swapchain_details.capabilities);
+    VkSurfaceCapabilitiesKHR* capabilities = &ctx->physical->swapchain_details.capabilities;
+
     if (capabilities->currentExtent.width != UINT32_MAX) {
         return capabilities->currentExtent;
     } else {
-        i32 width, height;
-        glfwGetFramebufferSize(window->window, &width, &height);
-
         VkExtent2D actualExtent;
         actualExtent.width = clamp((u32)width, capabilities->minImageExtent.width, capabilities->maxImageExtent.width);
         actualExtent.height = clamp((u32)height, capabilities->minImageExtent.height, capabilities->maxImageExtent.height);
@@ -35,7 +42,7 @@ VkExtent2D pick_extent(VkSurfaceCapabilitiesKHR* capabilities, window_window* wi
     }
 }
 
-vulkan_swapchain* vulkan_swapchain_create(vulkan_context* ctx, window_window* window, VkSurfaceKHR surface) {
+vulkan_swapchain* vulkan_swapchain_create(vulkan_context* ctx) {
     // Calculate image count
     u32 imageCount = ctx->physical->swapchain_details.capabilities.minImageCount + 1;
     if (ctx->physical->swapchain_details.capabilities.maxImageCount > 0 && (imageCount > ctx->physical->swapchain_details.capabilities.maxImageCount)) {
@@ -44,14 +51,14 @@ vulkan_swapchain* vulkan_swapchain_create(vulkan_context* ctx, window_window* wi
 
     VkSurfaceFormatKHR format = pick_format(ctx->physical->swapchain_details.numFormats, ctx->physical->swapchain_details.formats);
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(ctx->physical->physical, surface, &ctx->physical->swapchain_details.capabilities);
-    VkExtent2D extent = pick_extent(&ctx->physical->swapchain_details.capabilities, window);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(ctx->physical->physical, ctx->surface, &ctx->physical->swapchain_details.capabilities);
+    VkExtent2D extent = pick_extent(ctx);
 
     VkSwapchainCreateInfoKHR createInfo;
     CLEAR_MEMORY(&createInfo);
 
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = surface;
+    createInfo.surface = ctx->surface;
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = format.format;
     createInfo.imageColorSpace = format.colorSpace;

@@ -18,6 +18,6 @@ typedef struct {
     vulkan_context* ctx;
 } vulkan_swapchain;
 
-vulkan_swapchain* vulkan_swapchain_create(vulkan_context* ctx, window_window* window, VkSurfaceKHR surface);
+vulkan_swapchain* vulkan_swapchain_create(vulkan_context* ctx);
 void vulkan_swapchain_destroy(vulkan_swapchain* swapchain);
 
