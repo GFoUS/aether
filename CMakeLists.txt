@@ -39,5 +39,6 @@ target_include_directories(aether PUBLIC
     "vendor/cimgui"
     "vendor/cimgui/imgui"
     "vendor/cimgui/generator/output"
+    "vendor/cgltf"
 )
 target_link_libraries(aether PUBLIC glfw Vulkan::Vulkan cglm)

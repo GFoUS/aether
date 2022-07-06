@@ -178,12 +178,14 @@ void vulkan_descriptor_set_free(vulkan_descriptor_set* set) {
 }
 
 void vulkan_descriptor_set_write_buffer(vulkan_descriptor_set* set, u32 binding, vulkan_buffer* buffer) {
+    vulkan_descriptor_allocator* allocator = (vulkan_descriptor_allocator*)set->allocator;
+
     VkDescriptorBufferInfo bufferInfo;
     CLEAR_MEMORY(&bufferInfo);
 
     bufferInfo.buffer = buffer->buffer;
     bufferInfo.offset = 0;
-    bufferInfo.range = buffer->size;
+    bufferInfo.range = allocator->layout->bindings[binding].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ? VK_WHOLE_SIZE : 256;
     
     VkWriteDescriptorSet writeInfo;
     CLEAR_MEMORY(&writeInfo);
@@ -193,14 +195,15 @@ void vulkan_descriptor_set_write_buffer(vulkan_descriptor_set* set, u32 binding,
     writeInfo.dstBinding = binding;
     writeInfo.dstArrayElement = 0;
     writeInfo.descriptorCount = 1;
-    writeInfo.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    writeInfo.descriptorType = allocator->layout->bindings[binding].descriptorType;
     writeInfo.pBufferInfo = &bufferInfo;
 
-    vulkan_descriptor_allocator* allocator = (vulkan_descriptor_allocator*)set->allocator;
     vkUpdateDescriptorSets(allocator->device->device, 1, &writeInfo, 0, NULL);
 }
 
 void vulkan_descriptor_set_write_image(vulkan_descriptor_set* set, u32 binding, vulkan_image* image, vulkan_sampler* sampler) {
+    vulkan_descriptor_allocator* allocator = (vulkan_descriptor_allocator*)set->allocator;
+    
     VkDescriptorImageInfo imageInfo;
     CLEAR_MEMORY(&imageInfo);
 
@@ -216,10 +219,9 @@ void vulkan_descriptor_set_write_image(vulkan_descriptor_set* set, u32 binding, 
     writeInfo.dstBinding = binding;
     writeInfo.dstArrayElement = 0;
     writeInfo.descriptorCount = 1;
-    writeInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    writeInfo.descriptorType = allocator->layout->bindings[binding].descriptorType;
     writeInfo.pImageInfo = &imageInfo;
 
-    vulkan_descriptor_allocator* allocator = (vulkan_descriptor_allocator*)set->allocator;
     vkUpdateDescriptorSets(allocator->device->device, 1, &writeInfo, 0, NULL);
 }
 

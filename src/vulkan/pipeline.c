@@ -14,10 +14,10 @@ vulkan_pipeline_vertex_info* get_vertex_input(vulkan_pipeline_config* config) {
     vertexInfo->vertexInfo = vulkan_vertex_get_info();
 
     vertexInfo->vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    /*vertexInfo->vertexInputInfo.vertexBindingDescriptionCount = vertexInfo->vertexInfo.numAttributes;
+    vertexInfo->vertexInputInfo.vertexBindingDescriptionCount = vertexInfo->vertexInfo.numAttributes;
     vertexInfo->vertexInputInfo.pVertexBindingDescriptions = vertexInfo->vertexInfo.bindings;
     vertexInfo->vertexInputInfo.vertexAttributeDescriptionCount = vertexInfo->vertexInfo.numAttributes;
-    vertexInfo->vertexInputInfo.pVertexAttributeDescriptions = vertexInfo->vertexInfo.attributes;*/
+    vertexInfo->vertexInputInfo.pVertexAttributeDescriptions = vertexInfo->vertexInfo.attributes;
 
     return vertexInfo;
 }

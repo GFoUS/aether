@@ -106,6 +106,8 @@ void copy_buffer_to_image(vulkan_image* dst, vulkan_buffer* src) {
         1,
         &region
     );
+
+    vulkan_context_submit(dst->ctx, cmd);
 }
 
 vulkan_image* vulkan_image_create(vulkan_context* ctx, VkFormat format, VkImageUsageFlags usage, u32 width, u32 height, VkImageAspectFlags aspects, VkSampleCountFlagBits samples) {
