@@ -43,21 +43,29 @@ typedef struct {
     mat4 padding[3];
 } model_model_data;
 
-void get_matrix_from_node(model_model* model, cgltf_node* node, mat4 parent, mat4* modelMatricies) {
-    mat4 transform;
+void get_matrix_from_node(model_model* model, cgltf_node* node, mat4 parent, model_model_data* modelMatricies) {
+    model_model_data data;
+    CLEAR_MEMORY(&data);
     if (node->has_matrix) {
-        memcpy(&transform, node->matrix, sizeof(model_model_data));
-    } else if (node->has_translation) {
-        glm_mat4_identity(transform);
-        glm_translate(transform, node->translation);
-        glm_quat_rotate(transform, node->rotation, transform);
-        glm_scale(transform, node->scale);
+        memcpy(&data.model, node->matrix, sizeof(mat4));
+    } else if (node->has_translation || node->has_rotation || node->has_scale) {
+        glm_mat4_identity(data.model);
+        vec3 defaultVec3, one;
+        glm_vec3_zero(defaultVec3);
+        glm_vec3_one(one);
+        versor defaultQuat;
+        glm_quat_identity(defaultQuat);
+        glm_translate(data.model, node->has_translation ? node->translation : defaultVec3);
+        glm_quat_rotate(data.model, node->has_rotation ? node->rotation : defaultQuat, data.model);
+        glm_scale(data.model, node->has_scale ? node->scale : one);
+    } else {
+        glm_mat4_identity(data.model);
     }
-    glm_mat4_mul(transform, parent, transform);
-    memcpy(modelMatricies[node - model->data->nodes], transform, sizeof(model_model_data));
+    glm_mat4_mul(data.model, parent, data.model);
+    memcpy(&modelMatricies[node - model->data->nodes], &data, sizeof(model_model_data));
 
     for (u32 i = 0; i < node->children_count; i++) {
-        get_matrix_from_node(model, node, transform, modelMatricies);
+        get_matrix_from_node(model, node, data.model, modelMatricies);
     }
 }
 
@@ -131,7 +139,6 @@ model_model* model_load(const char* path, vulkan_context* ctx, vulkan_descriptor
     vulkan_buffer_update(model->modelMatrixBuffer, sizeof(model_model_data) * model->data->nodes_count, modelMatrices);
     model->modelSet = vulkan_descriptor_set_allocate(model->modelSetAllocator);
     vulkan_descriptor_set_write_buffer(model->modelSet, 0, model->modelMatrixBuffer);
-
     free(modelMatrices);
 
     return model;
@@ -164,7 +171,7 @@ void model_unload(model_model* model) {
 
 void render_node(model_model* model, cgltf_node* node, VkCommandBuffer cmd, VkPipelineLayout pipelineLayout) {
     size_t nodeIndex = node - model->data->nodes;
-    u32 offset = nodeIndex * sizeof(model_model_data);
+    u32 offset = (u32)(nodeIndex * sizeof(model_model_data));
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 2, 1, &model->modelSet->set, 1, &offset);
 
     if (node->mesh != NULL) {
