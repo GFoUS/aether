@@ -34,19 +34,40 @@ VkSamplerAddressMode gltf_wrap_mode_to_vk_address_mode(cgltf_int wrapMode) {
 
 typedef struct {
     vec4 baseColorFactor; // 16
-    vec4 padding1;        // 16 + 16 = 32
-    vec4 padding2;        // 16 + 32 = 48
-    vec4 padding3;        // 16 + 48 = 64
-    mat4 padding4;        // 64 + 64 = 128
-    mat4 padding5;        // 64 + 128 = 192
-    mat4 padding6;        // 64 + 192 = 256
+    vec4 padding1[3];        // 16 + 48 = 64
+    mat4 padding2[3];       // 64 + 192 = 256
 } model_material_data;
 
-model_model* model_load(const char* path, vulkan_context* ctx, vulkan_descriptor_set_layout* materialSetLayout) {
+typedef struct {
+    mat4 model;
+    mat4 padding[3];
+} model_model_data;
+
+void get_matrix_from_node(model_model* model, cgltf_node* node, mat4 parent, mat4* modelMatricies) {
+    mat4 transform;
+    if (node->has_matrix) {
+        memcpy(&transform, node->matrix, sizeof(model_model_data));
+    } else if (node->has_translation) {
+        glm_mat4_identity(transform);
+        glm_translate(transform, node->translation);
+        glm_quat_rotate(transform, node->rotation, transform);
+        glm_scale(transform, node->scale);
+    }
+    glm_mat4_mul(transform, parent, transform);
+    memcpy(modelMatricies[node - model->data->nodes], transform, sizeof(model_model_data));
+
+    for (u32 i = 0; i < node->children_count; i++) {
+        get_matrix_from_node(model, node, transform, modelMatricies);
+    }
+}
+
+model_model* model_load(const char* path, vulkan_context* ctx, vulkan_descriptor_set_layout* materialSetLayout, vulkan_descriptor_set_layout* modelSetLayout) {
     model_model* model = malloc(sizeof(model_model));
     CLEAR_MEMORY(model);
     model->materialSetLayout = materialSetLayout;
     model->materialSetAllocator = vulkan_descriptor_allocator_create(ctx->device, model->materialSetLayout);
+    model->modelSetLayout = modelSetLayout;
+    model->modelSetAllocator = vulkan_descriptor_allocator_create(ctx->device, model->modelSetLayout);
 
     cgltf_options options;
     CLEAR_MEMORY(&options);
@@ -99,6 +120,20 @@ model_model* model_load(const char* path, vulkan_context* ctx, vulkan_descriptor
     vulkan_buffer_update(model->materialDataBuffer, sizeof(model_material_data) * model->data->materials_count, (void*)materialData);
     free(materialData);
 
+    model->modelMatrixBuffer = vulkan_buffer_create(ctx, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(model_model_data) * model->data->nodes_count);
+    model_model_data* modelMatrices = malloc(sizeof(model_model_data) * model->data->nodes_count);
+    mat4 identity;
+    glm_mat4_identity(identity);
+    CLEAR_MEMORY_ARRAY(modelMatrices, model->data->nodes_count);
+    for (u32 i = 0; i < model->data->scene->nodes_count; i++) {
+        get_matrix_from_node(model, model->data->scene->nodes[i], identity, modelMatrices);
+    }
+    vulkan_buffer_update(model->modelMatrixBuffer, sizeof(model_model_data) * model->data->nodes_count, modelMatrices);
+    model->modelSet = vulkan_descriptor_set_allocate(model->modelSetAllocator);
+    vulkan_descriptor_set_write_buffer(model->modelSet, 0, model->modelMatrixBuffer);
+
+    free(modelMatrices);
+
     return model;
 }
 
@@ -119,14 +154,18 @@ void model_unload(model_model* model) {
     free(model->samplers);
 
     vulkan_buffer_destroy(model->materialDataBuffer);
+    vulkan_buffer_destroy(model->modelMatrixBuffer);
     vulkan_descriptor_allocator_destroy(model->materialSetAllocator);
+    vulkan_descriptor_allocator_destroy(model->modelSetAllocator);
 
     cgltf_free(model->data);
     free(model);
 }
 
 void render_node(model_model* model, cgltf_node* node, VkCommandBuffer cmd, VkPipelineLayout pipelineLayout) {
-    // TODO: Model matricies
+    size_t nodeIndex = node - model->data->nodes;
+    u32 offset = nodeIndex * sizeof(model_model_data);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 2, 1, &model->modelSet->set, 1, &offset);
 
     if (node->mesh != NULL) {
         for (u32 i = 0; i < node->mesh->primitives_count; i++) {
@@ -137,7 +176,7 @@ void render_node(model_model* model, cgltf_node* node, VkCommandBuffer cmd, VkPi
             vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &model->materialSets[materialIndex]->set, 1, &offset);
 
             VkIndexType indexType = primitive->indices->component_type == cgltf_component_type_r_32u ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
-            size_t indexBufferIndex = (primitive->indices->buffer_view->buffer - model->data->buffers) / sizeof(cgltf_buffer*);
+            size_t indexBufferIndex = primitive->indices->buffer_view->buffer - model->data->buffers;
             vkCmdBindIndexBuffer(cmd, model->buffers[indexBufferIndex]->buffer, primitive->indices->offset + primitive->indices->buffer_view->offset, indexType);
 
             for (u32 j = 0; j < primitive->attributes_count; j++) {
@@ -151,7 +190,7 @@ void render_node(model_model* model, cgltf_node* node, VkCommandBuffer cmd, VkPi
                 }
 
                 if (attributeIndex != UINT32_MAX) {
-                    size_t attributeBufferIndex = (attribute->data->buffer_view->buffer - model->data->buffers) / sizeof(cgltf_buffer*);
+                    size_t attributeBufferIndex = attribute->data->buffer_view->buffer - model->data->buffers;
                     VkDeviceSize attributeOffset = attribute->data->offset + attribute->data->buffer_view->offset;
                     vkCmdBindVertexBuffers(cmd, attributeIndex, 1, &model->buffers[attributeBufferIndex]->buffer, &attributeOffset);
                 }
