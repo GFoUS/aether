@@ -3,6 +3,7 @@
 #include "event.h"
 #include "log.h"
 #include "types.h"
+#include "fs.h"
 
 #include <stdio.h>
 #include <stdlib.h>

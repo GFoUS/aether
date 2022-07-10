@@ -11,6 +11,7 @@ endif(WIN32)
 
 add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/cglm)
+add_subdirectory(vendor/nativefiledialog-extended)
 
 find_package(Vulkan REQUIRED)
 
@@ -28,9 +29,14 @@ file(GLOB IMGUI_SRC
     "vendor/cimgui/imgui/backends/imgui_impl_vulkan.cpp"
 )
 
+file(GLOB CJSON_SRC
+    "vendor/cJSON/cJSON.c"
+)
+
 add_library(aether 
     ${SRC}
     ${IMGUI_SRC}
+    ${CJSON_SRC}
 )
 target_include_directories(aether PUBLIC 
     "src" 
@@ -40,5 +46,7 @@ target_include_directories(aether PUBLIC
     "vendor/cimgui/imgui"
     "vendor/cimgui/generator/output"
     "vendor/cgltf"
+    "vendor/cJSON"
 )
 target_link_libraries(aether PUBLIC glfw Vulkan::Vulkan cglm)
+target_link_libraries(aether PRIVATE nfd)

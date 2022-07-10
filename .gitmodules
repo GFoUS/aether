@@ -17,3 +17,9 @@
 [submodule "vendor/cgltf"]
 	path = vendor/cgltf
 	url = https://github.com/jkuhlmann/cgltf
+[submodule "vendor/cJSON"]
+	path = vendor/cJSON
+	url = https://github.com/DaveGamble/cJSON
+[submodule "vendor/nativefiledialog-extended"]
+	path = vendor/nativefiledialog-extended
+	url = https://github.com/btzy/nativefiledialog-extended

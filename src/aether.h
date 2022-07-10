@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics/window.h"
+#include "core/core.h"
 
 void aether_init();
 void aether_deinit();
