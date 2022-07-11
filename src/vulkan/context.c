@@ -14,12 +14,17 @@ vulkan_context* vulkan_context_create(window_window* window)
 	const char* wantedExtensions[] = { VK_KHR_SURFACE_EXTENSION_NAME };
 
 	u32 numExtensions = numGlfwExtensions + numWantedExtensions;
-	const char** extensions = malloc(sizeof(const char*) * numExtensions);
+	char** extensions = malloc(sizeof(const char*) * numExtensions);
 	memcpy(extensions, glfwExtensions, sizeof(const char*) * numGlfwExtensions);
 	memcpy(&extensions[numGlfwExtensions], wantedExtensions, sizeof(const char*) * numWantedExtensions);
 
 	const char* layers[] = { "VK_LAYER_KHRONOS_validation" };
-	ctx->instance =  vulkan_instance_create(numExtensions, extensions, 1, layers);
+
+#ifdef NDEBUG
+	ctx->instance = vulkan_instance_create(numExtensions, extensions, 0, NULL);
+#else
+	ctx->instance = vulkan_instance_create(numExtensions, extensions, 1, layers);
+#endif
 	INFO("Created vulkan instance");
 	free(extensions);
 

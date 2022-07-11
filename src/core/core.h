@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
 
 #define CLEAR_MEMORY(data) memset(data, 0, sizeof(*data))
 #define CLEAR_MEMORY_ARRAY(data, length) memset(data, 0, sizeof(*data) * length)

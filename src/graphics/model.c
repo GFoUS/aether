@@ -3,6 +3,7 @@
 char* merge_paths(const char* path, const char* uri) {
     size_t uriLength = strlen(uri);
     char* lastSlash = strrchr(path, (int)"/"[0]);
+    if (!lastSlash) lastSlash = strrchr(path, (int)"\\"[0]);
     u64 lastSlashPos = lastSlash - path;
 
     char* result = malloc(lastSlashPos + 1 + uriLength + 1); // lastSlashPos + 1 is the path up to and including the last slash, uriLength will be needed for the new path, and the final + 1 is for the null-termination character 

@@ -97,7 +97,8 @@ bool is_suitable(vulkan_physical_device* physical, u32 numExtensions, const char
             supports_swapchain(physical) && 
             physical->features.samplerAnisotropy && 
             physical->features.independentBlend &&
-            physical->features.sampleRateShading;
+            physical->features.sampleRateShading &&
+            physical->properties.apiVersion >= VK_API_VERSION_1_3;
 }
 
 vulkan_physical_device* vulkan_physical_device_create(vulkan_instance* instance, VkSurfaceKHR surface, u32 numExtensions, const char** extensions) {
