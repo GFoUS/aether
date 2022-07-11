@@ -280,3 +280,18 @@ void vulkan_sampler_destroy(vulkan_sampler* sampler) {
     vkDestroySampler(sampler->ctx->device->device, sampler->sampler, NULL);
     free(sampler);
 }
+
+
+static vulkan_sampler* vulkan_sampler_default = NULL;
+vulkan_sampler* vulkan_sampler_get_default(vulkan_context* ctx) {
+    if (vulkan_sampler_default == NULL) {
+        vulkan_sampler_default = vulkan_sampler_create(ctx, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT);
+    }
+
+    return vulkan_sampler_default;
+}
+void vulkan_sampler_destroy_default(vulkan_context* ctx) {
+    if (vulkan_sampler_default != NULL) {
+        vulkan_sampler_destroy(vulkan_sampler_default);
+    }
+}

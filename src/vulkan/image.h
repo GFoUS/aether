@@ -32,3 +32,6 @@ typedef struct {
 
 vulkan_sampler* vulkan_sampler_create(vulkan_context* ctx, VkFilter magFilter, VkFilter minFilter, VkSamplerAddressMode addressModeU, VkSamplerAddressMode addressModeV);
 void vulkan_sampler_destroy(vulkan_sampler* sampler);
+
+vulkan_sampler* vulkan_sampler_get_default(vulkan_context* ctx);
+void vulkan_sampler_destroy_default(vulkan_context* ctx);

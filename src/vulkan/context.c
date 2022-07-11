@@ -3,6 +3,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 
+#include "image.h"
+
 vulkan_context* vulkan_context_create(window_window* window)
 {
 	vulkan_context* ctx = malloc(sizeof(vulkan_context));
@@ -63,6 +65,8 @@ vulkan_context* vulkan_context_create(window_window* window)
 
 void vulkan_context_destroy(vulkan_context* ctx)
 {
+	vulkan_sampler_destroy_default(ctx);
+
 	vulkan_command_pool_destroy(ctx->commandPool);
 	vmaDestroyAllocator(ctx->allocator);
 	vulkan_device_destroy(ctx->device);

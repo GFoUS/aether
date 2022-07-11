@@ -123,8 +123,12 @@ model_model* model_load(const char* path, vulkan_context* ctx, vulkan_descriptor
         
         vulkan_descriptor_set_write_buffer(model->materialSets[i], 0, model->materialDataBuffer);
         size_t baseColorTextureImageIndex = material->pbr_metallic_roughness.base_color_texture.texture->image - model->data->images;
-        size_t baseColorTextureSamplerIndex = material->pbr_metallic_roughness.base_color_texture.texture->sampler - model->data->samplers;
-        vulkan_descriptor_set_write_image(model->materialSets[i], 1, model->images[baseColorTextureImageIndex], model->samplers[baseColorTextureSamplerIndex]);
+        if (material->pbr_metallic_roughness.base_color_texture.texture->sampler) {
+            size_t baseColorTextureSamplerIndex = material->pbr_metallic_roughness.base_color_texture.texture->sampler - model->data->samplers;
+            vulkan_descriptor_set_write_image(model->materialSets[i], 1, model->images[baseColorTextureImageIndex], model->samplers[baseColorTextureSamplerIndex]);
+        } else {
+            vulkan_descriptor_set_write_image(model->materialSets[i], 1, model->images[baseColorTextureImageIndex], vulkan_sampler_get_default(ctx));
+        }
     }
     vulkan_buffer_update(model->materialDataBuffer, sizeof(model_material_data) * model->data->materials_count, (void*)materialData);
     free(materialData);
