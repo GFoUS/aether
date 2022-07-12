@@ -16,6 +16,7 @@ add_subdirectory(vendor/nativefiledialog-extended)
 find_package(Vulkan REQUIRED)
 
 file(GLOB SRC
+    "src/**/**/**/*.c"
     "src/**/**/*.c"
     "src/**/*.c"
     "src/*.c"

@@ -18,3 +18,5 @@
 #define MALLOC(size) malloc(size)
 #define REALLOC(data, size) data = realloc(data, size)
 
+#define ARRAY_SIZE(array) sizeof(array) / sizeof(*array)
+
