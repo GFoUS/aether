@@ -5,7 +5,8 @@
 #include "cJSON.h"
 
 typedef enum ecs_component_type {
-    COMPONENT_TYPE_MODEL = 0
+    COMPONENT_TYPE_MODEL = 0,
+    COMPONENT_TYPE_TAG
 } ecs_component_type;
 
 typedef struct ecs_entity_t ecs_entity;

@@ -2,6 +2,7 @@
 
 #include "entity.h"
 #include "project/ecs/components/model.h"
+#include "project/ecs/components/tag.h"
 #include "project/project.h"
 
 void ecs_component_create(ecs_component* component, ecs_entity* entity, ecs_component_type type) {
@@ -35,6 +36,7 @@ cJSON* ecs_component_encode(ecs_component* component) {
 
     switch (component->type) {
     case (COMPONENT_TYPE_MODEL) : cJSON_AddItemToObject(data, "data", ecs_component_model_encode((ecs_component_model*)component)); break;
+    case (COMPONENT_TYPE_TAG)   : cJSON_AddItemToObject(data, "data", ecs_component_tag_encode((ecs_component_tag*)component)); break;
     }
 
     return data;
@@ -45,5 +47,6 @@ void ecs_component_decode(ecs_entity* entity, const cJSON* component) {
     const cJSON* data = cJSON_GetObjectItemCaseSensitive(component, "data");
     switch (type) {
     case (COMPONENT_TYPE_MODEL) : ecs_component_model_decode(entity, data); break;
+    case (COMPONENT_TYPE_TAG)   : ecs_component_tag_decode(entity, data); break;
     }
 }
