@@ -19,7 +19,7 @@ ecs_entity* ecs_entity_create() {
 void ecs_entity_destroy(ecs_entity* entity) {
     ecs_world* world = ecs_world_get();
 
-    while (entity->numComponents) {
+    while (entity->numComponents != 0) {
         ecs_component_destroy(entity->components[0]);
     }
 

@@ -3,17 +3,20 @@
 #include "types.h"
 
 typedef void(*event_listener_fn)(void* data);
-typedef event_listener_fn event_listener_generic[1000];
+typedef event_listener_fn event_listener_generic[1024];
 
 typedef enum {
-    WINDOW_CLOSE,
-    KEY_PRESS
+    WINDOW_CLOSE = 0,
+    KEY_PRESS,
+    LAST_EVENT_TYPE
 } aether_event_type;
 
 typedef struct {
     void(*windowClose)(void* data);
     void(*keyPress)(void* data);
 } event_listener;
+
+event_listener* event_listener_create();
 
 typedef struct {
     u64 numListeners;

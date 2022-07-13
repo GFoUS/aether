@@ -1,18 +1,16 @@
 #include "world.h"
 
-ecs_world* ecs_world_create() {
-    ecs_world* world = malloc(sizeof(ecs_world));
+void ecs_world_create(ecs_world* world) {
     CLEAR_MEMORY(world);
     world->entities = malloc(0);
     world->systems = malloc(0);
-
-    return world;
 }
 
 ecs_world* ecs_world_get() {
     static ecs_world* world = NULL;
     if (world == NULL) {
-        world = ecs_world_create();
+        world = malloc(sizeof(ecs_world));
+        ecs_world_create(world);
     }
 
     return world;
@@ -21,17 +19,17 @@ ecs_world* ecs_world_get() {
 void ecs_world_destroy() {
     ecs_world* world = ecs_world_get();
     if (world != NULL) {
-        for (u32 i = 0; i < world->numEntities; i++) {
-            ecs_entity_destroy(world->entities[i]);
+        u32 numEntities = world->numEntities;
+        while (world->numEntities != 0) {
+            ecs_entity_destroy(world->entities[0]);
         }
-        free(world->entities);
+        CLEAR_MEMORY_ARRAY(world->entities, numEntities);
 
+        u32 numSystems = world->numSystems;
         for (u32 i = 0; i < world->numSystems; i++) {
             free(world->systems[i]);
         }
-        free(world->systems);
-
-        free(world);
+        CLEAR_MEMORY_ARRAY(world->systems, numSystems);
     }
 }
 
@@ -66,6 +64,7 @@ cJSON* ecs_world_save_entities() {
 }
 
 void ecs_world_load_entities(const cJSON* entities) {
+    ecs_world_destroy();
     ecs_world* world = ecs_world_get();
     for (u32 i = 0; i < (u32)cJSON_GetArraySize(entities); i++) {
         ecs_entity_decode(cJSON_GetArrayItem(entities, i));

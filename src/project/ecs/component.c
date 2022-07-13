@@ -21,7 +21,7 @@ void ecs_component_create(ecs_component* component, ecs_entity* entity, ecs_comp
 void ecs_component_destroy(ecs_component* component) {
     for (u32 i = 0; i < component->entity->numComponents; i++) {
         if (component->entity->components[i]->type == component->type) {
-            memcpy(component->entity->components[i], component->entity->components[i+1], sizeof(ecs_component*) * (component->entity->numComponents - (i + 1)));
+            memcpy(&component->entity->components[i], &component->entity->components[i+1], sizeof(ecs_component*) * (component->entity->numComponents - (i + 1)));
             component->entity->numComponents--;
             break;
         }

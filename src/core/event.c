@@ -1,6 +1,14 @@
 #include "event.h"
 
 #include <stdlib.h>
+#include <memory.h>
+
+event_listener* event_listener_create() {
+    event_listener_generic* listener = malloc(sizeof(event_listener_generic));
+    memset(listener, 0, sizeof(event_listener_fn) * 1024);
+
+    return (event_listener*)*listener;
+}
 
 static event_bus bus;
 

@@ -17,18 +17,6 @@ cJSON* project_meta_encode(project_meta* meta) {
 // project_project
 static project_project* project = NULL;
 
-project_project* project_create(const char* name) {
-    project_destroy();
-    project = malloc(sizeof(project_project));
-    CLEAR_MEMORY(project);
-
-    project->name = name;
-    project->numAssets = 0;
-    project->assets = malloc(0);
-
-    return project;
-}
-
 void project_destroy() {
     if (project) {
 
@@ -40,6 +28,19 @@ void project_destroy() {
         if (project->json) cJSON_Delete(project->json); // Need to keep cJSON's strings alive till the end of the program
         free(project);
     }
+}
+
+project_project* project_create(const char* name) {
+    project_destroy();
+    ecs_world_destroy();
+    project = malloc(sizeof(project_project));
+    CLEAR_MEMORY(project);
+
+    project->name = name;
+    project->numAssets = 0;
+    project->assets = malloc(0);
+
+    return project;
 }
 
 void project_save(const char* path) {
