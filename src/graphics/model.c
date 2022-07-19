@@ -44,7 +44,27 @@ typedef struct {
     mat4 padding[3];
 } model_model_data;
 
-void get_matrix_from_node(model_model* model, cgltf_node* node, mat4 parent, model_model_data* modelMatricies) {
+void model_get_node_matrix(model_model* model, mat4 result) {
+    cgltf_node* node = model->data->scene->nodes[0];
+    if (node->has_matrix) {
+        memcpy(result, node->matrix, sizeof(mat4));
+    } else if (node->has_translation || node->has_rotation || node->has_scale) {
+        glm_mat4_identity(result);
+        vec3 defaultVec3, one;
+        glm_vec3_zero(defaultVec3);
+        glm_vec3_one(one);
+        versor defaultQuat;
+        glm_quat_identity(defaultQuat);
+
+        glm_scale(result, node->has_scale ? node->scale : one);
+        glm_quat_rotate(result, node->has_rotation ? node->rotation : defaultQuat, result);
+        glm_translate(result, node->has_translation ? node->translation : defaultVec3);
+    } else {
+        glm_mat4_identity(result);
+    }
+}
+
+void calculate_model_matrix(model_model* model, cgltf_node* node, mat4 parent, model_model_data* modelMatricies) {
     model_model_data data;
     CLEAR_MEMORY(&data);
     if (node->has_matrix) {
@@ -56,9 +76,10 @@ void get_matrix_from_node(model_model* model, cgltf_node* node, mat4 parent, mod
         glm_vec3_one(one);
         versor defaultQuat;
         glm_quat_identity(defaultQuat);
-        glm_translate(data.model, node->has_translation ? node->translation : defaultVec3);
-        glm_quat_rotate(data.model, node->has_rotation ? node->rotation : defaultQuat, data.model);
+
         glm_scale(data.model, node->has_scale ? node->scale : one);
+        glm_quat_rotate(data.model, node->has_rotation ? node->rotation : defaultQuat, data.model);
+        glm_translate(data.model, node->has_translation ? node->translation : defaultVec3);
     } else {
         glm_mat4_identity(data.model);
     }
@@ -66,13 +87,26 @@ void get_matrix_from_node(model_model* model, cgltf_node* node, mat4 parent, mod
     memcpy(&modelMatricies[node - model->data->nodes], &data, sizeof(model_model_data));
 
     for (u32 i = 0; i < node->children_count; i++) {
-        get_matrix_from_node(model, node, data.model, modelMatricies);
+        calculate_model_matrix(model, node, data.model, modelMatricies);
     }
+}
+
+void model_set_global_transform(model_model* model, mat4 globalTransform) {
+    glm_mat4_copy(globalTransform, model->globalTransform);
+
+    model_model_data* modelMatrices = malloc(sizeof(model_model_data) * model->data->nodes_count);
+    CLEAR_MEMORY_ARRAY(modelMatrices, model->data->nodes_count);
+    calculate_model_matrix(model, model->data->scene->nodes[0], model->globalTransform, modelMatrices);
+    vulkan_buffer_update(model->modelMatrixBuffer, sizeof(model_model_data) * model->data->nodes_count, modelMatrices);
+    vulkan_descriptor_set_write_buffer(model->modelSet, 0, model->modelMatrixBuffer);
+    free(modelMatrices);
 }
 
 model_model* model_load(const char* path, vulkan_context* ctx, vulkan_descriptor_set_layout* materialSetLayout, vulkan_descriptor_set_layout* modelSetLayout) {
     model_model* model = malloc(sizeof(model_model));
     CLEAR_MEMORY(model);
+    model->ctx = ctx;
+
     model->materialSetLayout = materialSetLayout;
     model->materialSetAllocator = vulkan_descriptor_allocator_create(ctx->device, model->materialSetLayout);
     model->modelSetLayout = modelSetLayout;
@@ -93,6 +127,10 @@ model_model* model_load(const char* path, vulkan_context* ctx, vulkan_descriptor
     cgltf_result validateResult = cgltf_validate(model->data);
     if (validateResult != cgltf_result_success) {
         FATAL("GLTF validation failed for file: %s with error code: %d", path, validateResult);
+    }
+
+    if (model->data->scene->nodes_count != 1) {
+        WARN("The aether glTF files currently only support loading 1 model per scene. It may work but expect parts to be missing");
     }
 
     model->buffers = malloc(sizeof(vulkan_buffer*) * model->data->buffers_count);
@@ -133,18 +171,12 @@ model_model* model_load(const char* path, vulkan_context* ctx, vulkan_descriptor
     vulkan_buffer_update(model->materialDataBuffer, sizeof(model_material_data) * model->data->materials_count, (void*)materialData);
     free(materialData);
 
-    model->modelMatrixBuffer = vulkan_buffer_create(ctx, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(model_model_data) * model->data->nodes_count);
-    model_model_data* modelMatrices = malloc(sizeof(model_model_data) * model->data->nodes_count);
+
+    model->modelMatrixBuffer = vulkan_buffer_create(model->ctx, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(model_model_data) * model->data->nodes_count);
+    model->modelSet = vulkan_descriptor_set_allocate(model->modelSetAllocator);
     mat4 identity;
     glm_mat4_identity(identity);
-    CLEAR_MEMORY_ARRAY(modelMatrices, model->data->nodes_count);
-    for (u32 i = 0; i < model->data->scene->nodes_count; i++) {
-        get_matrix_from_node(model, model->data->scene->nodes[i], identity, modelMatrices);
-    }
-    vulkan_buffer_update(model->modelMatrixBuffer, sizeof(model_model_data) * model->data->nodes_count, modelMatrices);
-    model->modelSet = vulkan_descriptor_set_allocate(model->modelSetAllocator);
-    vulkan_descriptor_set_write_buffer(model->modelSet, 0, model->modelMatrixBuffer);
-    free(modelMatrices);
+    model_set_global_transform(model, identity);
 
     return model;
 }
@@ -218,7 +250,5 @@ void render_node(model_model* model, cgltf_node* node, VkCommandBuffer cmd, VkPi
 }
 
 void model_render(model_model* model, VkCommandBuffer cmd, VkPipelineLayout pipelineLayout) {
-    for (u32 i = 0; i < model->data->scene->nodes_count; i++) {
-        render_node(model, model->data->scene->nodes[i], cmd, pipelineLayout);
-    }
+    render_node(model, model->data->scene->nodes[0], cmd, pipelineLayout);
 }

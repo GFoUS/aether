@@ -6,7 +6,8 @@
 
 typedef enum ecs_component_type {
     COMPONENT_TYPE_MODEL = 0,
-    COMPONENT_TYPE_TAG
+    COMPONENT_TYPE_TAG,
+    COMPONENT_TYPE_TRANSFORM
 } ecs_component_type;
 
 typedef struct ecs_entity_t ecs_entity;

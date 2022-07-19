@@ -8,6 +8,7 @@
 
 typedef struct {
     cgltf_data* data;
+    vulkan_context* ctx;
 
     vulkan_descriptor_set_layout* materialSetLayout;
     vulkan_descriptor_allocator* materialSetAllocator;
@@ -22,9 +23,14 @@ typedef struct {
     vulkan_buffer** buffers;
     vulkan_image** images;
     vulkan_sampler** samplers;
+
+    mat4 globalTransform;
 } model_model;
 
 model_model* model_load(const char* path, vulkan_context* ctx, vulkan_descriptor_set_layout* materialSetLayout, vulkan_descriptor_set_layout* modelSetLayout);
 void model_unload(model_model* model);
 
+void model_get_node_matrix(model_model* model, mat4 result);
+
 void model_render(model_model* model, VkCommandBuffer cmd, VkPipelineLayout pipelineLayout);
+void model_set_global_transform(model_model* model, mat4 globalTransform);

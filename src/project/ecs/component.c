@@ -3,6 +3,7 @@
 #include "entity.h"
 #include "project/ecs/components/model.h"
 #include "project/ecs/components/tag.h"
+#include "project/ecs/components/transform.h"
 #include "project/project.h"
 
 void ecs_component_create(ecs_component* component, ecs_entity* entity, ecs_component_type type) {
@@ -14,8 +15,6 @@ void ecs_component_create(ecs_component* component, ecs_entity* entity, ecs_comp
     component->entity->numComponents++;
     component->entity->components = realloc(component->entity->components, sizeof(ecs_component*) * component->entity->numComponents);
     component->entity->components[component->entity->numComponents - 1] = component;
-
-    return component;
 }
 
 void ecs_component_destroy(ecs_component* component) {
@@ -35,8 +34,9 @@ cJSON* ecs_component_encode(ecs_component* component) {
     cJSON_AddNumberToObject(data, "type", component->type);
 
     switch (component->type) {
-    case (COMPONENT_TYPE_MODEL) : cJSON_AddItemToObject(data, "data", ecs_component_model_encode((ecs_component_model*)component)); break;
-    case (COMPONENT_TYPE_TAG)   : cJSON_AddItemToObject(data, "data", ecs_component_tag_encode((ecs_component_tag*)component)); break;
+    case (COMPONENT_TYPE_MODEL)     : cJSON_AddItemToObject(data, "data", ecs_component_model_encode((ecs_component_model*)component)); break;
+    case (COMPONENT_TYPE_TAG)       : cJSON_AddItemToObject(data, "data", ecs_component_tag_encode((ecs_component_tag*)component)); break;
+    case (COMPONENT_TYPE_TRANSFORM) : cJSON_AddItemToObject(data, "data", ecs_component_transform_encode((ecs_component_transform*)component)); break;
     }
 
     return data;
@@ -48,5 +48,6 @@ void ecs_component_decode(ecs_entity* entity, const cJSON* component) {
     switch (type) {
     case (COMPONENT_TYPE_MODEL) : ecs_component_model_decode(entity, data); break;
     case (COMPONENT_TYPE_TAG)   : ecs_component_tag_decode(entity, data); break;
+    case (COMPONENT_TYPE_TRANSFORM) : ecs_component_transform_decode(entity, data); break;
     }
 }
