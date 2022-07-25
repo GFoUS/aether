@@ -5,6 +5,7 @@
 #include "types.h"
 #include "fs.h"
 #include "maths.h"
+#include "strutils.h"
 
 #include <stdio.h>
 #include <stdlib.h>

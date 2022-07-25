@@ -11,6 +11,7 @@ typedef struct {
 
 typedef struct {
     const char* name;
+    const char* root;
     project_meta meta;
 
     u32 numAssets;

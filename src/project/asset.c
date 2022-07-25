@@ -1,5 +1,15 @@
 #include "asset.h"
 
+#include "project.h"
+
+char* project_asset_make_path(const char* path) {
+    project_project* project = project_get();
+    char* out = str_allocator_allocate(str_allocator_get_global(), strlen(path) + strlen(project->root));
+    strcat(out, project->root);
+    strcat(out, path);
+    return out;
+}
+
 void project_asset_create(project_asset* asset, project_asset_type type, const char* path) {
     CLEAR_MEMORY(asset);
     asset->type = type;
@@ -34,7 +44,7 @@ project_asset_model* project_asset_model_load(project_asset* asset, project_asse
         CLEAR_MEMORY(model);
 
         model->asset = asset;
-        model->model = model_load(asset->path, config->ctx, config->materialSetLayout, config->modelSetLayout);
+        model->model = model_load(project_asset_make_path(asset->path), config->ctx, config->materialSetLayout, config->modelSetLayout);
 
         model->asset->numTimesLoaded++;
         model->asset->loadedData = (void*)model;

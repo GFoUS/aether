@@ -1,6 +1,7 @@
 #include "project.h"
 
 #include "ecs/world.h"
+#include "core/fs.h"
 
 // project_meta
 void project_meta_decode(project_meta* out, const cJSON* data) {
@@ -67,6 +68,8 @@ void project_save(const char* path) {
     fprintf(file, "%s", projectFileText);
     fclose(file);
 
+    project->root = path_get_parent(str_allocator_get_global(), path);
+
     INFO("Saved project data to file %s", path);
 }
 
@@ -99,6 +102,8 @@ project_project* project_load(const char* path) {
         project_asset_decode(&project->assets[i], cJSON_GetArrayItem(assets, (i32)i));
     }
     ecs_world_load_entities(cJSON_GetObjectItemCaseSensitive(project->json, "entities"));
+
+    project->root = path_get_parent(str_allocator_get_global(), path);
 
     INFO("Loaded project from: %s", path);
 
