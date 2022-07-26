@@ -65,11 +65,6 @@ void ecs_component_transform_update(ecs_component_transform* component, vec3 tra
     glm_mat4_mul(component->matrix, s, component->matrix);
     glm_mat4_mul(component->matrix, r, component->matrix);
     glm_mat4_mul(component->matrix, t, component->matrix);
-
-    ecs_component_model* model = (ecs_component_model*)ecs_entity_get_component(component->component.entity, COMPONENT_TYPE_MODEL);
-    if (model != NULL && model->asset->numTimesLoaded != 0) {
-        model_set_global_transform(((project_asset_model*)model->asset->loadedData)->model, component->matrix);
-    }
 }
 
 void ecs_component_transform_decode(ecs_entity* entity, const cJSON* data) {

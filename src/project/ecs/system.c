@@ -2,13 +2,15 @@
 
 #include "world.h"
 
-ecs_system* ecs_system_create(u32 numRequirements, ecs_component_type* requirements, void(*callback)(ecs_entity*, void*)) {    
+ecs_system* ecs_system_create(u32 numRequirements, ecs_component_type* requirements, void(*updateCallback)(ecs_entity*, void*), void(*destroyCallback)(void*), void* data) {    
     ecs_system* system = malloc(sizeof(ecs_system));
     CLEAR_MEMORY(system);
 
-    system->numRequirements = 0;
+    system->numRequirements = numRequirements;
     system->requirements = requirements;
-    system->callback = callback;
+    system->updateCallback = updateCallback;
+    system->destroyCallback = destroyCallback;
+    system->data = data;
 
     ecs_world* world = ecs_world_get();
     world->numSystems++;
@@ -19,5 +21,25 @@ ecs_system* ecs_system_create(u32 numRequirements, ecs_component_type* requireme
 }
 
 void ecs_system_call(ecs_system* system, ecs_entity* entity) {
-    system->callback(entity, system->data);
+    system->updateCallback(entity, system->data);
+}
+
+void ecs_system_set_data(ecs_system* system, void* data) {
+    system->data = data;
+}
+
+void ecs_system_destroy(ecs_system* system) {
+    ecs_world* world = ecs_world_get();
+
+    system->destroyCallback(system->data);
+
+    for (u32 i = 0; i < world->numSystems; i++) {
+        if (world->systems[i] == system) {
+            memcpy(world->systems[i],  world->systems[i+1], sizeof(ecs_system*) * (world->numSystems - (i + 1)));
+            world->numSystems--;
+            break;
+        }
+    }
+
+    free(system);
 }
