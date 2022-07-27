@@ -35,8 +35,11 @@ VkSamplerAddressMode gltf_wrap_mode_to_vk_address_mode(cgltf_int wrapMode) {
 
 typedef struct {
     vec4 baseColorFactor; // 16
-    vec4 padding1[3];        // 16 + 48 = 64
-    mat4 padding2[3];       // 64 + 192 = 256
+    float metallicFactor; // 20
+    float roughtnessFactor; // 24
+    float padding1[2]; // 24 + 8 = 32
+    vec4 padding2[2];        // 32 + 32 = 64
+    mat4 padding3[3];       // 64 + 192 = 256
 } model_material_data;
 
 typedef struct {
@@ -158,14 +161,41 @@ model_model* model_load(const char* path, vulkan_context* ctx, vulkan_descriptor
         model->materialSets[i] = vulkan_descriptor_set_allocate(model->materialSetAllocator);
         
         glm_vec4_copy(material->pbr_metallic_roughness.base_color_factor, materialData[i].baseColorFactor);
-        
+        materialData[i].metallicFactor = material->pbr_metallic_roughness.metallic_factor;
+        materialData[i].roughtnessFactor = material->pbr_metallic_roughness.roughness_factor;
+
         vulkan_descriptor_set_write_buffer(model->materialSets[i], 0, model->materialDataBuffer);
+
         size_t baseColorTextureImageIndex = material->pbr_metallic_roughness.base_color_texture.texture->image - model->data->images;
         if (material->pbr_metallic_roughness.base_color_texture.texture->sampler) {
             size_t baseColorTextureSamplerIndex = material->pbr_metallic_roughness.base_color_texture.texture->sampler - model->data->samplers;
             vulkan_descriptor_set_write_image(model->materialSets[i], 1, model->images[baseColorTextureImageIndex], model->samplers[baseColorTextureSamplerIndex]);
         } else {
             vulkan_descriptor_set_write_image(model->materialSets[i], 1, model->images[baseColorTextureImageIndex], vulkan_sampler_get_default(ctx));
+        }
+
+        if (material->normal_texture.texture != NULL) {
+            size_t normalTextureImageIndex = material->normal_texture.texture->image - model->data->images;
+            if (material->normal_texture.texture->sampler) {
+                size_t normalTextureSamplerIndex = material->normal_texture.texture->sampler - model->data->samplers;
+                vulkan_descriptor_set_write_image(model->materialSets[i], 2, model->images[normalTextureImageIndex], model->samplers[normalTextureSamplerIndex]);
+            } else {
+                vulkan_descriptor_set_write_image(model->materialSets[i], 2, model->images[normalTextureImageIndex], vulkan_sampler_get_default(ctx));
+            }
+        } else {
+            vulkan_descriptor_set_write_image(model->materialSets[i], 2, vulkan_image_get_default_color_texture(ctx), vulkan_sampler_get_default(ctx));
+        }
+
+        if (material->pbr_metallic_roughness.metallic_roughness_texture.texture != NULL) {
+        size_t metallicRoughnessTextureImageIndex = material->pbr_metallic_roughness.metallic_roughness_texture.texture->image - model->data->images;
+            if (material->pbr_metallic_roughness.metallic_roughness_texture.texture->sampler) {
+                size_t metallicRoughnessTextureSamplerIndex = material->pbr_metallic_roughness.metallic_roughness_texture.texture->sampler - model->data->samplers;
+                vulkan_descriptor_set_write_image(model->materialSets[i], 3, model->images[metallicRoughnessTextureImageIndex], model->samplers[metallicRoughnessTextureSamplerIndex]);
+            } else {
+                vulkan_descriptor_set_write_image(model->materialSets[i], 3, model->images[metallicRoughnessTextureImageIndex], vulkan_sampler_get_default(ctx));
+            }
+        } else {
+            vulkan_descriptor_set_write_image(model->materialSets[i], 3, vulkan_image_get_default_color_texture(ctx), vulkan_sampler_get_default(ctx));
         }
     }
     vulkan_buffer_update(model->materialDataBuffer, sizeof(model_material_data) * model->data->materials_count, (void*)materialData);

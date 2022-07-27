@@ -18,7 +18,7 @@ typedef struct {
     bool isDepthBuffered;
     vulkan_subpass_attachment depthAttachment;
     bool isResolving;
-    vulkan_subpass_attachment resolveAttachment;
+    vulkan_subpass_attachment* resolveAttachments;
 } vulkan_subpass_config;
 
 typedef struct {

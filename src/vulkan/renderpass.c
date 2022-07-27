@@ -41,11 +41,14 @@ void vulkan_renderpass_builder_add_subpass(vulkan_renderpass_builder* builder, v
         depthAttachment->layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     }
 
-    VkAttachmentReference* resolveAttachment = NULL;
+    VkAttachmentReference* resolveAttachments = NULL;
     if (config->isResolving) {
-        resolveAttachment = malloc(sizeof(VkAttachmentReference));
-        resolveAttachment->attachment = config->resolveAttachment;
-        resolveAttachment->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        resolveAttachments = malloc(sizeof(VkAttachmentReference) * config->numColorAttachments);
+        CLEAR_MEMORY_ARRAY(resolveAttachments, config->numColorAttachments);
+        for (u32 i = 0; i < config->numColorAttachments; i++) {
+            resolveAttachments[i].attachment = config->resolveAttachments[i];
+            resolveAttachments[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        }
     }
 
     VkSubpassDescription* subpass = &builder->subpasses[builder->numSubpasses - 1];
@@ -56,7 +59,7 @@ void vulkan_renderpass_builder_add_subpass(vulkan_renderpass_builder* builder, v
     subpass->colorAttachmentCount = config->numColorAttachments;
     subpass->pColorAttachments = colorAttachments;
     subpass->pDepthStencilAttachment = depthAttachment;
-    subpass->pResolveAttachments = resolveAttachment;
+    subpass->pResolveAttachments = resolveAttachments;
 }
 
 vulkan_renderpass* vulkan_renderpass_builder_build(vulkan_renderpass_builder* builder, vulkan_device* device) {
@@ -105,6 +108,8 @@ vulkan_renderpass* vulkan_renderpass_builder_build(vulkan_renderpass_builder* bu
 }
 
 void vulkan_renderpass_destroy(vulkan_renderpass* renderpass) {
+    vkDestroyRenderPass(renderpass->device->device, renderpass->renderpass, NULL);
+    
     for (u32 i = 0; i < renderpass->numSubpasses; i++) {
         free(renderpass->subpasses[i].pInputAttachments);
         free(renderpass->subpasses[i].pColorAttachments);
@@ -117,7 +122,6 @@ void vulkan_renderpass_destroy(vulkan_renderpass* renderpass) {
     }
     free(renderpass->attachments);
     free(renderpass->subpasses);
-    vkDestroyRenderPass(renderpass->device->device, renderpass->renderpass, NULL);
     free(renderpass);
 }
 

@@ -48,6 +48,8 @@ typedef struct {
 
     u32 numDynamicStates;
     VkDynamicState* dynamicStates;
+
+    bool verticesFromBuffer;
 } vulkan_pipeline_config;
 
 vulkan_pipeline* vulkan_pipeline_create(vulkan_device* device, vulkan_pipeline_config* config);

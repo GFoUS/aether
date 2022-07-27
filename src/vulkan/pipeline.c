@@ -11,7 +11,9 @@ vulkan_pipeline_vertex_info* get_vertex_input(vulkan_pipeline_config* config) {
     vulkan_pipeline_vertex_info* vertexInfo = malloc(sizeof(vulkan_pipeline_vertex_info));
     CLEAR_MEMORY(vertexInfo);
 
-    vertexInfo->vertexInfo = vulkan_vertex_get_info();
+    if (config->verticesFromBuffer) {
+        vertexInfo->vertexInfo = vulkan_vertex_get_info();
+    }
 
     vertexInfo->vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInfo->vertexInputInfo.vertexBindingDescriptionCount = vertexInfo->vertexInfo.numAttributes;
